@@ -43,6 +43,16 @@ public class R<T> {
         return r;
     }
 
+    // 成功响应 （返回自定义数据）
+    public static <T> R<T> success(String str) {
+        R<T> r = new R<>();
+        r.setCode(200);
+        r.setMessage(str);
+        r.setData(null);
+        return r;
+    }
+
+
     // 3.失败响应 （自定义状态码 + 自定义描述）
     public static <T> R<T> error(int code, String message) {
         R<T> r = new R<>();

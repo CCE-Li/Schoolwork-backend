@@ -1,11 +1,15 @@
 package cn.uptra.schoolwork.modules.user.service.impl;
 
+import cn.uptra.schoolwork.common.result.R;
 import cn.uptra.schoolwork.modules.user.entity.User;
 import cn.uptra.schoolwork.modules.user.mapper.UserMapper;
 import cn.uptra.schoolwork.modules.user.service.UserService;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -51,5 +55,43 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             return this.updateById(user);
         }
         return false;
+    }
+
+    /**
+     * 上传用户身份
+     */
+    @Override
+    public boolean updateUserRole(Long uid, int role) {
+        User user = this.getUserByUid(uid);
+        if (user != null) {
+            user.setStatus(role);
+            return this.updateById(user);
+        }
+        return false;
+    }
+
+    /**
+     * 获取注册用户统计
+     * @param startDate
+     * @param endDate
+     * @return R<Object>
+     */
+    @Override
+    public R<Object> getRegisterStatistics(String startDate, String endDate) {
+        List<Map<String, Object>> list = this.baseMapper.getRegisterStatistics(startDate, endDate);
+        return R.success(list);
+
+    }
+
+    /**
+     * 用户活跃度统计
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    @Override
+    public R<Object> getActiveUserStatistics(String startDate, String endDate) {
+        List<Map<String, Object>> list = this.baseMapper.getActiveUserStatistics(startDate, endDate);
+        return R.success(list);
     }
 }

@@ -21,7 +21,7 @@ public class AdminController {
      * @return
      */
     @PostMapping("/login")
-    public R<Admin> login(@RequestBody Admin admin) {
+    public R<Admin> login(@RequestBody   Admin admin) {
         Admin dbAdmin = adminService.getByUsername(admin.getUsername());
         if (dbAdmin != null && dbAdmin.getPassword().equals(admin.getPassword())) {
             return R.success(dbAdmin);
