@@ -34,6 +34,15 @@ public class R<T> {
         return r;
     }
 
+    // 成功响应
+    public static <T> R<T> success(T data, String message) {
+        R<T> r = new R<>();
+        r.setCode(200);
+        r.setMessage(message);
+        r.setData(data);
+        return r;
+    }
+
     // 2.成功响应（不带业务数据）
     public static <T> R<T> success() {
         R<T> r = new R<>();

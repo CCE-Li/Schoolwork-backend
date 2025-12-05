@@ -149,3 +149,12 @@ CREATE TABLE `admins`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `admins_pk`(`admin_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+
+-- 添加 date_created 字段，用于记录用户注册时间
+ALTER TABLE users
+    ADD COLUMN date_created DATETIME DEFAULT CURRENT_TIMESTAMP;
+
+-- 添加 date_modified 字段，用于记录用户信息最后修改时间
+ALTER TABLE users
+    ADD COLUMN date_modified DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;

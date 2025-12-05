@@ -27,7 +27,7 @@ public class AuthController {
      * @return 统一响应：成功返回token，失败返回错误提示
      */
     @PostMapping("/login")
-    public R<String> login(@RequestBody User user) {
+    public R<User> login(@RequestBody User user) {
         String username = user.getUsername();
         String password = user.getPassword();
         // 直接查询管理员用户
@@ -41,8 +41,10 @@ public class AuthController {
         }
         else if (!passwordEncoder.matches(password, dbUser.getPassword())) {
             return R.error("密码错误");
-        } else {
-            return R.success("Bearer " + jwtUtil.generateToken(username, "USER"));
+        } else if (dbUser.getStatus() == 0)  {
+            return R.error("此用户被禁用，请练习管理员");
+        }else {
+            return R.success(user,"Bearer " + jwtUtil.generateToken(username, "USER"));
         }
     }
     
