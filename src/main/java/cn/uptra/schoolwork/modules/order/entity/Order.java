@@ -1,9 +1,8 @@
 package cn.uptra.schoolwork.modules.order.entity;
 
-import ch.qos.logback.core.model.INamedModel;
+import cn.uptra.schoolwork.common.handler.JsonTypeHandler;
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -15,7 +14,7 @@ import java.util.Map;
  * 订单实体类
  */
 @Data
-@TableName("orders")
+@TableName(value = "orders", autoResultMap = true)
 public class Order {
     
     @TableId("id")
@@ -26,8 +25,8 @@ public class Order {
     private Long uid;    // 用户ID
     private Integer status; // 订单状态
 
-    @JsonProperty("books")
-    private Map<Object, Object> books; // 订单商品JSON
+    @TableField(value = "books", typeHandler = JsonTypeHandler.class)
+    private List<Map<String, Object>> books; // 订单商品JSON数组
 
     @TableField("total_price")
     private BigDecimal total_Price; // 订单总金额
