@@ -1,6 +1,7 @@
 package cn.uptra.schoolwork.modules.book.controller;
 
 
+import cn.uptra.schoolwork.common.result.PageResult;
 import cn.uptra.schoolwork.common.result.R;
 import cn.uptra.schoolwork.common.security.CustomUserDetails;
 import cn.uptra.schoolwork.modules.book.entity.Book;
@@ -31,18 +32,29 @@ public class BookController {
      * @param title
      * @return  书籍列表
      */
-    @GetMapping("")
-    public List<Book> ListBooks(
-                                @RequestParam(required = false) String bid,
-                                @RequestParam(required = false) String author,
-                                @RequestParam(required = false) String title,
-                                @RequestParam(required = false) String tags) {
-        if (bid != null) {
-            return bookService.getBookByBid(Integer.parseInt(bid));
-        }
-        else {
-            return bookService.listBooks(author, title, tags);
-        }
+    // @GetMapping("")
+    // public List<Book> ListBooks(
+    //                             @RequestParam(required = false) String bid,
+    //                             @RequestParam(required = false) String author,
+    //                             @RequestParam(required = false) String title,
+    //                             @RequestParam(required = false) String tags) {
+    //     if (bid != null) {
+    //         return bookService.getBookByBid(Integer.parseInt(bid));
+    //     }
+    //     else {
+    //         return bookService.listBooks(author, title, tags);
+    //     }
+    // }
+    @GetMapping
+    public R<PageResult<Book>> getBooks(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "12") Integer pageSize,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) String tags) {
+        
+        PageResult<Book> result = bookService.getBooks(page, pageSize, title, author, tags);
+        return R.success(result);
     }
 
     // TODO: 平均评分 + 所有评分数量 + 所有评论

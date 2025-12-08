@@ -1,11 +1,14 @@
 package cn.uptra.schoolwork.modules.book.service.impl;
 
+import cn.uptra.schoolwork.common.result.R;
+import cn.uptra.schoolwork.common.result.PageResult;
 import cn.uptra.schoolwork.modules.book.entity.Book;
 import cn.uptra.schoolwork.modules.book.mapper.BookMapper;
 import cn.uptra.schoolwork.modules.book.service.BookService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -40,5 +43,26 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
     @Override
     public List<Book> listBooks(String author, String title, String tags) {
         return this.baseMapper.listBooks(author, title, tags);
+    }
+
+    @Override
+    public PageResult<Book> getBooks(Integer page, Integer pageSize, 
+                                      String title, String author, String tags) {
+        // 计算偏移量
+        int offset = (page - 1) * pageSize;
+        
+        // 处理tags参数
+        List<String> tagList = null;
+        if (tags != null && !tags.isEmpty()) {
+            tagList = Arrays.asList(tags.split(","));
+        }
+        
+        // 查询数据
+        List<Book> list = baseMapper.selectBooks(offset, pageSize, title, author, tagList);
+        
+        // 查询总数
+        int total = baseMapper.countBooks(title, author, tagList);
+        
+        return new PageResult<>(list, total);
     }
 }
