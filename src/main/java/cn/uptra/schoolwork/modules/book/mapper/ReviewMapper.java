@@ -18,11 +18,11 @@ public interface ReviewMapper extends BaseMapper<Review> {
     Integer getReviewCountByBid(Integer bid);
 
     // 根据bid和uid查询用户是否已评论该书
-    @Select("SELECT COUNT(*) FROM reviews WHERE bid = #{bid} AND uid = #{ uid} ")
+    @Select("SELECT COUNT(*) FROM reviews WHERE bid = #{bid} AND uid = #{uid} ")
     Integer hasUserReviewedBook(Integer bid, Long uid);
 
     // 根据bid和uid查询用户的评论内容
-    @Select("SELECT * FROM reviews WHERE bid = #{bid} AND uid = #{ uid} ")
+    @Select("SELECT * FROM reviews WHERE bid = #{bid} AND uid = #{uid} ")
     Review getUserReviewForBook(Integer bid, Long uid);
 
     // 根据bid返回书本的所有评论，按时间排序

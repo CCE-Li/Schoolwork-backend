@@ -2,12 +2,14 @@ package cn.uptra.schoolwork.modules.book.controller;
 
 
 import cn.uptra.schoolwork.common.result.R;
+import cn.uptra.schoolwork.common.security.CustomUserDetails;
 import cn.uptra.schoolwork.modules.book.entity.Book;
 import cn.uptra.schoolwork.modules.book.entity.Review;
 import cn.uptra.schoolwork.modules.book.service.BookService;
 import cn.uptra.schoolwork.modules.book.service.ReviewService;
 import cn.uptra.schoolwork.modules.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,11 +45,18 @@ public class BookController {
         }
     }
 
-
-    // TODO: 评论 + 详情介绍页面
+    // TODO: 平均评分 + 所有评分数量 + 所有评论
     @GetMapping("/{bid}")
-    public String about() {
-        return "This is the Book Management API. You can use this API to search and retrieve book information based on various criteria such as author, title, and tags.";
+    public R<?> about(@PathVariable("bid") Integer bid) {
+        Double avgRating = reviewService.getAverageRatingByBid(bid);
+        Integer reviewCount = reviewService.getReviewCountByBid(bid);
+        List<Review> reviews = reviewService.getAllReviewsByBid(bid);
+        
+        return R.success(new java.util.HashMap<String, Object>() {{
+            put("averageRating", avgRating);
+            put("reviewCount", reviewCount);
+            put("reviews", reviews);
+        }});
     }
 
     /**
@@ -58,7 +67,9 @@ public class BookController {
     @PostMapping("/{bid}")
     public R<Book> addReview(@RequestBody Review review,
                              @PathVariable("bid") Integer bid,
-                             @RequestParam("uid") Long uid) {
+                             @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long uid = userDetails.getUId();
         // 基本校验：uid/book 存在性
         if (uid == null) {
             return R.error("uid 参数缺失");
