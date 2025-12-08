@@ -12,27 +12,27 @@ import java.util.List;
 public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, Review> implements ReviewService {
 
     @Override
-    public Double getAverageRatingByBid(Integer bid) {
+    public Double getAverageRatingByBid(Long bid) {
         return this.baseMapper.getAverageRatingByBid(bid);
     }
 
     @Override
-    public Integer getReviewCountByBid(Integer bid) {
+    public Integer getReviewCountByBid(Long bid) {
         return this.baseMapper.getReviewCountByBid(bid);
     }
 
     @Override
-    public Integer hasUserReviewedBook(Integer bid, Long uid) {
+    public Integer hasUserReviewedBook(Long bid, Long uid) {
         return this.baseMapper.hasUserReviewedBook(bid, uid);
     }
 
     @Override
-    public Review getUserReviewForBook(Integer bid, Long uid) {
+    public Review getUserReviewForBook(Long bid, Long uid) {
         return this.baseMapper.getUserReviewForBook(bid, uid);
     }
 
     @Override
-    public List<Review> getAllReviewsByBid(Integer bid) {
+    public List<Review> getAllReviewsByBid(Long bid) {
         return this.baseMapper.getAllReviewsByBid(bid);
     }
 

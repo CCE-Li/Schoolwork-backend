@@ -59,7 +59,7 @@ public class BookController {
 
     // TODO: 平均评分 + 所有评分数量 + 所有评论
     @GetMapping("/{bid}")
-    public R<?> about(@PathVariable("bid") Integer bid) {
+    public R<?> about(@PathVariable("bid") Long bid) {
         Double avgRating = reviewService.getAverageRatingByBid(bid);
         Integer reviewCount = reviewService.getReviewCountByBid(bid);
         List<Review> reviews = reviewService.getAllReviewsByBid(bid);
@@ -78,7 +78,7 @@ public class BookController {
      */
     @PostMapping("/{bid}")
     public R<Book> addReview(@RequestBody Review review,
-                             @PathVariable("bid") Integer bid,
+                             @PathVariable("bid") Long bid,
                              @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long uid = userDetails.getUId();

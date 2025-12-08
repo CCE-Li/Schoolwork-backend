@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface BookMapper extends BaseMapper<Book> {
     @Select("SELECT * FROM books WHERE bid = #{bid} ")
-    List<Book> getBookByBid(Integer bid);
+    List<Book> getBookByBid(Long bid);
 
     // 通过标题、标签、作者模糊查询书籍
     @Select("SELECT * FROM books WHERE title LIKE CONCAT('%', #{keyword}, '%') " +

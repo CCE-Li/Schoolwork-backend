@@ -1,6 +1,5 @@
 package cn.uptra.schoolwork.modules.book.service.impl;
 
-import cn.uptra.schoolwork.common.result.R;
 import cn.uptra.schoolwork.common.result.PageResult;
 import cn.uptra.schoolwork.modules.book.entity.Book;
 import cn.uptra.schoolwork.modules.book.mapper.BookMapper;
@@ -19,7 +18,7 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
      * @return
      */
     @Override
-    public List<Book> getBookByBid(Integer bid) {
+    public List<Book> getBookByBid(Long bid) {
         return this.baseMapper.getBookByBid(bid);
     }
 

@@ -11,23 +11,23 @@ import java.util.List;
 public interface ReviewMapper extends BaseMapper<Review> {
     // 根据bid返回书本的平均评分
     @Select("SELECT AVG(rating) FROM reviews WHERE bid = #{bid} ")
-    Double getAverageRatingByBid(Integer bid);
+    Double getAverageRatingByBid(Long bid);
 
     // 根据bid返回书本的所有评论数量
     @Select("SELECT COUNT(*) FROM reviews WHERE bid = #{bid} ")
-    Integer getReviewCountByBid(Integer bid);
+    Integer getReviewCountByBid(Long bid);
 
     // 根据bid和uid查询用户是否已评论该书
     @Select("SELECT COUNT(*) FROM reviews WHERE bid = #{bid} AND uid = #{uid} ")
-    Integer hasUserReviewedBook(Integer bid, Long uid);
+    Integer hasUserReviewedBook(Long bid, Long uid);
 
     // 根据bid和uid查询用户的评论内容
     @Select("SELECT * FROM reviews WHERE bid = #{bid} AND uid = #{uid} ")
-    Review getUserReviewForBook(Integer bid, Long uid);
+    Review getUserReviewForBook(Long bid, Long uid);
 
     // 根据bid返回书本的所有评论，按时间排序
     @Select("SELECT * FROM reviews WHERE bid = #{bid} ORDER BY review_time DESC ")
-    List<Review> getAllReviewsByBid(Integer bid);
+    List<Review> getAllReviewsByBid(Long bid);
 
     // 根据uid返回用户的所有评论
     @Select("SELECT * FROM reviews WHERE uid = #{uid} ")

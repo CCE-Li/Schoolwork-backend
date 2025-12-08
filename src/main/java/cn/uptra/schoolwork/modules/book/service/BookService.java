@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 public interface BookService extends IService<Book> {
-    public List<Book> getBookByBid(Integer bid);
+    public List<Book> getBookByBid(Long bid);
     public List<Book> searchBooksByKeyword(String keyword);
     public List<Book> listBooks(String author, String title, String tags);
     public PageResult<Book> getBooks(Integer page, Integer pageSize, 

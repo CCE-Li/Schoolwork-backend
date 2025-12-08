@@ -13,7 +13,7 @@ public class Review {
     @TableId("id")
     private Integer id;
     private Long uid;
-    private Integer bid;
+    private Long bid;
     private Integer rating;
     private String comment;
     private LocalDateTime review_time;
