@@ -2,9 +2,9 @@ package cn.uptra.schoolwork.modules.user.controller;
 
 
 import cn.uptra.schoolwork.common.result.R;
+import cn.uptra.schoolwork.common.security.CustomUserDetails;
 import cn.uptra.schoolwork.modules.book.entity.Book;
 import cn.uptra.schoolwork.modules.user.dto.UpdatePasswordRequest;
-import cn.uptra.schoolwork.modules.user.dto.UserProfilesDTO;
 import cn.uptra.schoolwork.modules.user.entity.User;
 import cn.uptra.schoolwork.modules.user.entity.UserFavourites;
 import cn.uptra.schoolwork.modules.user.entity.UserProfiles;
@@ -13,11 +13,11 @@ import cn.uptra.schoolwork.modules.user.service.UserProfileService;
 import cn.uptra.schoolwork.modules.user.service.UserService;
 import cn.uptra.schoolwork.modules.user.util.PasswordValidator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("api/user")
@@ -40,14 +40,24 @@ public class UserController {
      * @return 统一响应：成功返回用户信息，失败返回错误提示
      */
     @PostMapping("updatelist")
-    public R<User> updateList(@RequestBody UserProfiles userProfiles,
-                              @RequestParam("uid") Long uid) {
+    public R<User> updateList(@RequestBody(required = false) UserProfiles userProfiles,
+                              @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long uid = userDetails.getUId();
         User user = userService.getUserByUid(uid);
         if (user == null) {
             return R.error("用户不存在");
         } else {
             if (userProfiles == null) return R.error("请求体为空");
+
+            // 如果当前用户还没有 user_profiles 记录，则新建一条
             UserProfiles nowProfiles = userProfileService.getUserByUid(uid);
+            boolean isNew = false;
+            if (nowProfiles == null) {
+                nowProfiles = new UserProfiles();
+                nowProfiles.setUid(uid);
+                isNew = true;
+            }
+
             String name = userProfiles.getName();
             String email = userProfiles.getEmail();
             String phone = userProfiles.getPhone();
@@ -71,7 +81,12 @@ public class UserController {
             if (prefer != null && !prefer.equals(nowProfiles.getPrefer())) {
                 nowProfiles.setPrefer(prefer);
             }
-            boolean ok = userProfileService.updateById(nowProfiles);
+            boolean ok;
+            if (isNew) {
+                ok = userProfileService.save(nowProfiles);
+            } else {
+                ok = userProfileService.updateByUid(nowProfiles);
+            }
             if (ok) {
                 return R.success(user);
             } else {
@@ -88,7 +103,8 @@ public class UserController {
      */
     @PostMapping("/update")
     public R<User> update(@RequestBody UpdatePasswordRequest req,
-                          @RequestParam(value = "uid", required = false) Long uid) {
+                          @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long uid = userDetails.getUId();
         if (req == null) {
             return R.error("请求体为空");
         }
@@ -128,7 +144,8 @@ public class UserController {
      * @return  统一响应：成功返回收藏列表，失败返回错误提示
      */
     @GetMapping("/favourites")
-    public List<Book> getFavourites(@RequestParam("uid") Long uid) {
+    public List<Book> getFavourites(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long uid = userDetails.getUId();
         User user = userService.getUserByUid(uid);
         if (user == null) {
             return null;

@@ -6,6 +6,8 @@ import cn.uptra.schoolwork.modules.user.mapper.UserMapper;
 import cn.uptra.schoolwork.modules.user.service.UserService;
 import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +15,9 @@ import java.util.Map;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     /**
      * 通过用户名获取用户
      * @param username
@@ -51,7 +56,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public boolean updateUserPassword(Long uid, String newPassword) {
         User user = this.getUserByUid(uid);
         if (user != null) {
-            user.setPassword(newPassword);
+            // 使用与注册时相同的加密方式存储新密码
+            String encoded = passwordEncoder.encode(newPassword);
+            user.setPassword(encoded);
             return this.updateById(user);
         }
         return false;

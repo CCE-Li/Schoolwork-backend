@@ -28,4 +28,9 @@ public class UserProfilesImpl extends ServiceImpl<UserProfilesMapper, UserProfil
         userProfiles.setUid(uid);
         this.save(userProfiles);
     }
+
+    @Override
+    public boolean updateByUid(UserProfiles userProfiles) {
+        return this.baseMapper.updateByUid(userProfiles);
+    }
 }
