@@ -96,6 +96,54 @@ public class UserController {
     }
 
     /**
+     * 判断当前用户是否已收藏指定图书
+     * @param bid 图书ID
+     * @return  统一响应：true 已收藏 / false 未收藏
+     */
+    @GetMapping("/favourites/{bid}/exists")
+    public R<Boolean> favouriteExists(@PathVariable("bid") Long bid,
+                                      @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long uid = userDetails.getUId();
+        User user = userService.getUserByUid(uid);
+        if (user == null) {
+            return R.error("用户不存在");
+        }
+
+        long count = userFavouriteService.lambdaQuery()
+                .eq(UserFavourites::getUid, uid)
+                .eq(UserFavourites::getBid, bid)
+                .count();
+
+        return R.success(count > 0);
+    }
+
+    /**
+     * 删除用户收藏接口： （delete请求，删除一条收藏记录）
+     * @param bid 图书ID
+     * @return 统一响应：成功/失败
+     */
+    @DeleteMapping("/favourites/{bid}")
+    public R<Void> deleteFavourite(@PathVariable("bid") Long bid,
+                                   @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long uid = userDetails.getUId();
+        User user = userService.getUserByUid(uid);
+        if (user == null) {
+            return R.error("用户不存在");
+        }
+
+        boolean removed = userFavouriteService.lambdaUpdate()
+                .eq(UserFavourites::getUid, uid)
+                .eq(UserFavourites::getBid, bid)
+                .remove();
+
+        if (removed) {
+            return R.success();
+        } else {
+            return R.error("未找到对应的收藏记录");
+        }
+    }
+
+    /**
      * 修改用户信息接口： （post请求，明文修改用户信息）
      * 目前只支持修改密码，后续可扩展
      * @param req 前端传递的用户信息
@@ -140,6 +188,41 @@ public class UserController {
     }
 
     /**
+     * 添加用户收藏接口： （post请求，添加一条收藏记录）
+     * @param bid  图书ID
+     * @return  统一响应：成功/失败
+     */
+    @PostMapping("/favourites/{bid}")
+    public R<Void> addFavourite(@PathVariable("bid") Long bid,
+                                @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long uid = userDetails.getUId();
+        User user = userService.getUserByUid(uid);
+        if (user == null) {
+            return R.error("用户不存在");
+        }
+
+        // 已经收藏过则不重复添加
+        long count = userFavouriteService.lambdaQuery()
+                .eq(UserFavourites::getUid, uid)
+                .eq(UserFavourites::getBid, bid)
+                .count();
+        if (count > 0) {
+            return R.error("已收藏该图书");
+        }
+
+        UserFavourites favourite = new UserFavourites();
+        favourite.setUid(uid);
+        favourite.setBid(bid);
+
+        boolean ok = userFavouriteService.save(favourite);
+        if (ok) {
+            return R.success();
+        } else {
+            return R.error("添加收藏失败");
+        }
+    }
+
+    /**
      * 返回用户收藏列表接口： （get请求，返回用户收藏列表）
      * @return  统一响应：成功返回收藏列表，失败返回错误提示
      */
@@ -156,6 +239,8 @@ public class UserController {
         }
 
     }
+
+    
 
 
 }
