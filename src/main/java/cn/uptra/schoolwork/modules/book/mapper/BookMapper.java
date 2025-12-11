@@ -65,4 +65,9 @@ public interface BookMapper extends BaseMapper<Book> {
     int countBooks(@Param("title") String title, 
                    @Param("author") String author,
                    @Param("tagList") List<String> tagList);
+
+
+
+        @Select("SELECT * FROM books WHERE bid = #{bid}")
+        Book getByBid(Long bid);
 }

@@ -7,9 +7,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-@TableName("order_items")
+// @TableName("order_items")
 public class OrderItem {
-    @TableId
+    // @TableId
     private Long id;
     private Long orderId;       // 订单ID
     private Long bookId;        // 书籍ID

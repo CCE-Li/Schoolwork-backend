@@ -20,10 +20,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import cn.uptra.schoolwork.modules.book.entity.Book;
+import cn.uptra.schoolwork.modules.book.service.BookService;
+import cn.uptra.schoolwork.modules.cart.entity.Cart;
+import cn.uptra.schoolwork.modules.cart.service.CartService;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,23 +37,72 @@ import java.util.*;
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements OrderService {
     @Autowired
     private OrderMapper orderMapper;
+    
+    @Autowired
+    private BookService bookService;
+    
+    @Autowired
+    private CartService cartService;
 
     /**
-     * 创建订单
-     * @param uid
-     * @param addressId
-     * @return
+     * 创建订单（从购物车）
+     * @param uid 用户ID
+     * @param addressId 地址ID
+     * @return 订单号
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String createOrderFromCart(Long uid, Long addressId) {
+        // 1. 获取用户购物车中的所有商品
+        List<Cart> cartItems = cartService.listByUid(uid);
+        if (cartItems == null || cartItems.isEmpty()) {
+            throw new BusinessException("购物车为空，无法创建订单");
+        }
+        
+        // 2. 获取所有图书ID并批量查询图书信息
+        List<Long> bookIds = cartItems.stream()
+                .map(Cart::getBid)
+                .collect(Collectors.toList());
+        List<Book> books = bookService.getBooksByIds(bookIds);
+        Map<Long, Book> bookMap = books.stream()
+                .collect(Collectors.toMap(Book::getBid, b -> b, (a, b) -> a));
+        
+        // 3. 构建订单商品列表并计算总价
+        List<Map<String, Object>> orderBooks = new ArrayList<>();
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        
+        for (Cart cartItem : cartItems) {
+            Book book = bookMap.get(cartItem.getBid());
+            if (book == null) {
+                throw new BusinessException("图书不存在: " + cartItem.getBid());
+            }
+            
+            Map<String, Object> bookInfo = new HashMap<>();
+            bookInfo.put("bid", cartItem.getBid());
+            bookInfo.put("number", cartItem.getNumber());
+            orderBooks.add(bookInfo);
+            
+            // 计算小计并累加到总价
+            BigDecimal itemTotal = book.getPrice().multiply(BigDecimal.valueOf(cartItem.getNumber()));
+            totalPrice = totalPrice.add(itemTotal);
+        }
+        
+        // 4. 创建订单
         Order order = new Order();
         order.setOid(generateOrderNo());
         order.setUid(uid);
         order.setStatus(Order.Status.UNPAID);
+        order.setBooks(orderBooks);
+        order.setTotal_Price(totalPrice);
         order.setCreate_Time(LocalDateTime.now());
-
+        
         this.save(order);
+        
+        // 5. 清空用户购物车
+        cartService.lambdaUpdate()
+                .eq(Cart::getUid, uid)
+                .remove();
+        
         return order.getOid();
     }
 
@@ -71,7 +126,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
      */
     @Override
     public Order getOrderDetail(String orderNo, Long userId) {
-        return this.getOne(new LambdaQueryWrapper<Order>().eq(Order::getOid, orderNo));
+        return orderMapper.getOrderDetail(orderNo, userId);
     }
 
 
@@ -88,8 +143,63 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
         if (status != null) {
             wrapper.eq(Order::getStatus, status);
         }
+        wrapper.orderByDesc(Order::getCreate_Time);
         Page<Order> page = new Page<>(pageNum, pageSize);
-        return this.page(page, wrapper);
+        Page<Order> result = this.page(page, wrapper);
+        
+        // 补充图书详情信息
+        enrichOrdersWithBookDetails(result.getRecords());
+        
+        return result;
+    }
+    
+    /**
+     * 为订单列表补充图书详情信息（name, price, coverUrl）
+     */
+    private void enrichOrdersWithBookDetails(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return;
+        }
+        
+        // 收集所有订单中的 bookId
+        Set<Long> allBookIds = new HashSet<>();
+        for (Order order : orders) {
+            if (order.getBooks() != null) {
+                for (Map<String, Object> bookItem : order.getBooks()) {
+                    Object bidObj = bookItem.get("bid");
+                    if (bidObj != null) {
+                        allBookIds.add(Long.valueOf(bidObj.toString()));
+                    }
+                }
+            }
+        }
+        
+        if (allBookIds.isEmpty()) {
+            return;
+        }
+        
+        // 批量查询图书信息
+        List<Book> books = bookService.getBooksByIds(new ArrayList<>(allBookIds));
+        Map<Long, Book> bookMap = books.stream()
+                .collect(Collectors.toMap(Book::getBid, b -> b, (a, b) -> a));
+        
+        // 补充图书详情到每个订单的 books 中
+        for (Order order : orders) {
+            if (order.getBooks() != null) {
+                for (Map<String, Object> bookItem : order.getBooks()) {
+                    Object bidObj = bookItem.get("bid");
+                    if (bidObj != null) {
+                        Long bid = Long.valueOf(bidObj.toString());
+                        Book book = bookMap.get(bid);
+                        if (book != null) {
+                            bookItem.put("name", book.getTitle());
+                            bookItem.put("price", book.getPrice());
+                            bookItem.put("coverUrl", book.getCoverUrl());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -168,8 +278,17 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     
     @Override
     public void updateOrderStatus(String orderNo, Integer status) {
+        // 支持按 oid 或 id 查询
         Order order = this.getOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOid, orderNo));
+        if (order == null) {
+            // 尝试按 id 查询（前端可能传的是数字 id）
+            try {
+                Integer id = Integer.parseInt(orderNo);
+                order = this.getById(id);
+            } catch (NumberFormatException ignored) {
+            }
+        }
         if (order == null) {
             throw new BusinessException("订单不存在");
         }
@@ -182,20 +301,29 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, Order> implements
     
     @Override
     public void shipOrder(String orderNo, String shippingCompany, String shippingNo) {
+        // 支持按 oid 或 id 查询
         Order order = this.getOne(new LambdaQueryWrapper<Order>()
                 .eq(Order::getOid, orderNo));
+        if (order == null) {
+            try {
+                Integer id = Integer.parseInt(orderNo);
+                order = this.getById(id);
+            } catch (NumberFormatException ignored) {
+            }
+        }
         if (order == null) {
             throw new BusinessException("订单不存在");
         }
         
         // 检查订单状态是否为已支付（假设状态2为已支付）
-        if (order.getStatus() != 2) {
-            throw new BusinessException("订单状态异常，无法发货");
+        // 只有已支付的订单才能发货
+        if (!Objects.equals(order.getStatus(), Order.Status.PAID)) {
+            throw new BusinessException("只有已支付的订单才能发货");
         }
-        
+
         Order updateOrder = new Order();
         updateOrder.setId(order.getId());
-        updateOrder.setStatus(3); // 假设3为已发货状态
+        updateOrder.setStatus(Order.Status.SHIPPED); // 发货后状态：已发货
         // 注意：根据数据库结构，orders表没有shipping_company和shipping_no字段
         // 如果需要存储物流信息，需要先添加到orders表或创建新表
         this.updateById(updateOrder);

@@ -53,4 +53,14 @@ public class Order {
     public int getItemCount() {
         return items != null ? items.size() : 0;
     }
+    
+    // 兼容前端字段名：totalPrice
+    public BigDecimal getTotalPrice() {
+        return this.total_Price;
+    }
+    
+    // 兼容前端字段名：createTime
+    public LocalDateTime getCreateTime() {
+        return this.create_Time;
+    }
 }

@@ -64,4 +64,14 @@ public class BookServiceImpl extends ServiceImpl<BookMapper, Book> implements Bo
         
         return new PageResult<>(list, total);
     }
+
+    @Override
+    public List<Book> getBooksByIds(List<Long> bookIds) {
+        return lambdaQuery().in(Book::getBid, bookIds).list();
+    }
+
+    @Override
+    public Book getByBid(Long bid) {
+        return this.baseMapper.getByBid(bid);
+    }
 }

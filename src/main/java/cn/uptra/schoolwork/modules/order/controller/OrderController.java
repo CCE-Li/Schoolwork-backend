@@ -1,6 +1,8 @@
 package cn.uptra.schoolwork.modules.order.controller;
 
 import cn.uptra.schoolwork.common.result.R;
+import cn.uptra.schoolwork.modules.book.entity.Book;
+import cn.uptra.schoolwork.modules.book.service.BookService;
 import cn.uptra.schoolwork.modules.order.entity.Order;
 import cn.uptra.schoolwork.modules.order.service.OrderService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,6 +14,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 订单管理控制器
@@ -23,6 +30,7 @@ import java.math.BigDecimal;
 public class OrderController {
 
     private final OrderService orderService;
+    private final BookService bookService;
 
     @Operation(summary = "创建订单（从购物车）")
     @PostMapping("/createFromCart")
@@ -43,7 +51,29 @@ public class OrderController {
             @RequestParam Long addressId) {
         Long uid = userDetails.getUId();
         String orderNo = orderService.createOrderDirectly(uid, bid, number, addressId);
-        return R.success(orderNo);
+        
+        // 获取刚创建的订单
+        Order order = orderService.lambdaQuery()
+                .eq(Order::getOid, orderNo)
+                .one();
+        
+        if (order == null) {
+            return R.error(500, "订单创建失败");
+        }
+        
+        List<Map<String, Object>> books = new ArrayList<>();
+        books.add(Map.of("bid", bid, "number", number));
+        order.setBooks(books);
+        
+        List<Book> bookList = bookService.getBookByBid(bid);
+        if (bookList == null || bookList.isEmpty()) {
+            return R.error(404, "图书不存在");
+        }
+        Book book = bookList.get(0);
+        order.setTotal_Price(BigDecimal.valueOf(number).multiply(book.getPrice()));
+        
+        orderService.updateById(order);
+        return R.success(order.getOid());
     }
 
     @Operation(summary = "获取订单详情")
@@ -61,14 +91,25 @@ public class OrderController {
 
     @Operation(summary = "分页查询用户订单列表")
     @GetMapping("/list")
-    public R<Page<Order>> listUserOrders(
+    public R<List<Map<String, Object>>> listUserOrders(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Integer status) {
         Long userId = userDetails.getUId();
         Page<Order> orderPage = orderService.listUserOrders(userId, pageNum, pageSize, status);
-        return R.success(orderPage);
+        List<Map<String, Object>> orderList = orderPage.getRecords().stream()
+                .map(order -> {
+                    Map<String, Object> orderMap = new HashMap<>();
+                    orderMap.put("orderNo", order.getOid());
+                    orderMap.put("createTime", order.getCreate_Time());
+                    orderMap.put("status", order.getStatus());
+                    orderMap.put("totalPrice", order.getTotal_Price());
+                    orderMap.put("books", order.getBooks());
+                    return orderMap;
+                })
+                .collect(Collectors.toList());
+        return R.success(orderList);
     }
 
     @Operation(summary = "取消订单")

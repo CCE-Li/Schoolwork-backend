@@ -12,4 +12,10 @@ public interface BookService extends IService<Book> {
     public List<Book> listBooks(String author, String title, String tags);
     public PageResult<Book> getBooks(Integer page, Integer pageSize, 
                                       String title, String author, String tags);
+
+    public Book getByBid(Long bid);
+
+    // 批量查询图书（推荐添加）
+    List<Book> getBooksByIds(List<Long> bookIds);
+    
 }

@@ -80,7 +80,7 @@ public interface OrderMapper extends BaseMapper<Order> {
      * 生成取消订单的方法
      * 根据用户uid和订单号取消订单
      */
-    @Update("UPDATE orders SET status = 5 WHERE oid = #{oid} AND uid = #{uid}")
+    @Update("UPDATE orders SET status = 4 WHERE oid = #{oid} AND uid = #{uid}")
     boolean cancelOrder(String oid, Long uid);
 
     /**
@@ -94,4 +94,10 @@ public interface OrderMapper extends BaseMapper<Order> {
 
     @Select("SELECT * FROM orders WHERE oid = #{oid} AND uid = #{uid}")
     Order selectOrderByOidAndUid(String oid, Long uid);
+
+    /**
+     * 获取订单详情（通过orderNo）
+     */
+    @Select("SELECT * FROM orders WHERE oid = #{oid} AND uid = #{uid}")
+    Order getOrderDetail(String oid, Long uid);
 }
